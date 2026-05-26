@@ -1,0 +1,10 @@
+{
+  "input_path": "./input/random",
+  "output_path": "./output",
+  "test_name": "interpolation_x2",
+  "sr_mode": "spatial",
+  "sr_type": "interpolation",
+  "sr_ratio": 2.0,
+  "fps": 30,
+  "create_video": false
+}
