@@ -1,10 +1,12 @@
 {
+  "to_do": "add a list of supported SR types and modes",
+
   "input_path": "./input/synthetic_data",
   "output_path": "./output",
   "test_name": "interpolation_x2",
   "sr_mode": "spatial",
   "sr_type": "interpolation",
   "sr_ratio": 2.0,
-  "fps": 30,
-  "create_video": true
+  "create_video": true,
+  "fps": 30
 }

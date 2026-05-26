@@ -16,6 +16,14 @@ def load_shader(path):
     return Path(path).read_text(encoding="utf-8")
 
 
+def load_texture(ctx, path):
+    image = Image.open(path).convert("RGBA")
+    image = image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+    texture = ctx.texture(image.size, 4, image.tobytes())
+    texture.filter = (moderngl.LINEAR, moderngl.LINEAR)
+    return texture
+
+
 def perspective(fov_y_degrees, aspect, near, far):
     f = 1.0 / math.tan(math.radians(fov_y_degrees) * 0.5)
 
@@ -48,61 +56,88 @@ def look_at(eye, target, up):
     ], dtype=np.float32)
 
 
-def rotation_y(angle):
-    c = math.cos(angle)
-    s = math.sin(angle)
-
+def translate(v):
+    x, y, z = v
     return np.array([
-        [c, 0.0, s, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [-s, 0.0, c, 0.0],
+        [1.0, 0.0, 0.0, x],
+        [0.0, 1.0, 0.0, y],
+        [0.0, 0.0, 1.0, z],
         [0.0, 0.0, 0.0, 1.0],
     ], dtype=np.float32)
 
 
-def rotation_x(angle):
-    c = math.cos(angle)
-    s = math.sin(angle)
-
+def scale(v):
+    x, y, z = v
     return np.array([
+        [x, 0.0, 0.0, 0.0],
+        [0.0, y, 0.0, 0.0],
+        [0.0, 0.0, z, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ], dtype=np.float32)
+
+
+def rotation_xyz(degrees):
+    rx, ry, rz = [math.radians(v) for v in degrees]
+
+    cx, sx = math.cos(rx), math.sin(rx)
+    cy, sy = math.cos(ry), math.sin(ry)
+    cz, sz = math.cos(rz), math.sin(rz)
+
+    rot_x = np.array([
         [1.0, 0.0, 0.0, 0.0],
-        [0.0, c, -s, 0.0],
-        [0.0, s, c, 0.0],
+        [0.0, cx, -sx, 0.0],
+        [0.0, sx, cx, 0.0],
         [0.0, 0.0, 0.0, 1.0],
     ], dtype=np.float32)
+
+    rot_y = np.array([
+        [cy, 0.0, sy, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [-sy, 0.0, cy, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ], dtype=np.float32)
+
+    rot_z = np.array([
+        [cz, -sz, 0.0, 0.0],
+        [sz, cz, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ], dtype=np.float32)
+
+    return rot_z @ rot_y @ rot_x
 
 
 def create_cube_mesh(ctx, program):
     vertices = np.array([
-        -1, -1, -1,  0,  0, -1,
-         1, -1, -1,  0,  0, -1,
-         1,  1, -1,  0,  0, -1,
-        -1,  1, -1,  0,  0, -1,
+        -1, -1, -1,  0,  0, -1,  0, 0,
+         1, -1, -1,  0,  0, -1,  1, 0,
+         1,  1, -1,  0,  0, -1,  1, 1,
+        -1,  1, -1,  0,  0, -1,  0, 1,
 
-        -1, -1,  1,  0,  0,  1,
-         1, -1,  1,  0,  0,  1,
-         1,  1,  1,  0,  0,  1,
-        -1,  1,  1,  0,  0,  1,
+        -1, -1,  1,  0,  0,  1,  0, 0,
+         1, -1,  1,  0,  0,  1,  1, 0,
+         1,  1,  1,  0,  0,  1,  1, 1,
+        -1,  1,  1,  0,  0,  1,  0, 1,
 
-        -1, -1, -1, -1,  0,  0,
-        -1,  1, -1, -1,  0,  0,
-        -1,  1,  1, -1,  0,  0,
-        -1, -1,  1, -1,  0,  0,
+        -1, -1, -1, -1,  0,  0,  0, 0,
+        -1,  1, -1, -1,  0,  0,  1, 0,
+        -1,  1,  1, -1,  0,  0,  1, 1,
+        -1, -1,  1, -1,  0,  0,  0, 1,
 
-         1, -1, -1,  1,  0,  0,
-         1,  1, -1,  1,  0,  0,
-         1,  1,  1,  1,  0,  0,
-         1, -1,  1,  1,  0,  0,
+         1, -1, -1,  1,  0,  0,  0, 0,
+         1,  1, -1,  1,  0,  0,  1, 0,
+         1,  1,  1,  1,  0,  0,  1, 1,
+         1, -1,  1,  1,  0,  0,  0, 1,
 
-        -1,  1, -1,  0,  1,  0,
-         1,  1, -1,  0,  1,  0,
-         1,  1,  1,  0,  1,  0,
-        -1,  1,  1,  0,  1,  0,
+        -1,  1, -1,  0,  1,  0,  0, 0,
+         1,  1, -1,  0,  1,  0,  1, 0,
+         1,  1,  1,  0,  1,  0,  1, 1,
+        -1,  1,  1,  0,  1,  0,  0, 1,
 
-        -1, -1, -1,  0, -1,  0,
-         1, -1, -1,  0, -1,  0,
-         1, -1,  1,  0, -1,  0,
-        -1, -1,  1,  0, -1,  0,
+        -1, -1, -1,  0, -1,  0,  0, 0,
+         1, -1, -1,  0, -1,  0,  1, 0,
+         1, -1,  1,  0, -1,  0,  1, 1,
+        -1, -1,  1,  0, -1,  0,  0, 1,
     ], dtype=np.float32)
 
     indices = np.array([
@@ -119,11 +154,50 @@ def create_cube_mesh(ctx, program):
 
     vao = ctx.vertex_array(
         program,
-        [(vbo, "3f 3f", "in_position", "in_normal")],
+        [(vbo, "3f 3f 2f", "in_position", "in_normal", "in_uv")],
         index_buffer=ibo,
     )
 
     return vao, vbo, ibo
+
+
+def create_solid_texture(ctx, color):
+    rgba = np.array([
+        int(color[0] * 255),
+        int(color[1] * 255),
+        int(color[2] * 255),
+        255,
+    ], dtype=np.uint8)
+
+    texture = ctx.texture((1, 1), 4, rgba.tobytes())
+    texture.filter = (moderngl.NEAREST, moderngl.NEAREST)
+    return texture
+
+
+def resolve_texture(ctx, texture_name, fallback_color, texture_cache):
+    if texture_name:
+        texture_path = texture_name
+
+        if texture_path not in texture_cache:
+            texture_cache[texture_path] = load_texture(ctx, texture_path)
+
+        return texture_cache[texture_path], True
+
+    return create_solid_texture(ctx, fallback_color), False
+
+
+def compute_entity_model(entity, frame_index):
+    position = np.array(entity.get("position", [0, 0, 0]), dtype=np.float32)
+    orientation = np.array(entity.get("orientation", [0, 0, 0]), dtype=np.float32)
+    scale_value = np.array(entity.get("scale", [1, 1, 1]), dtype=np.float32)
+
+    linear_velocity = np.array(entity.get("linear_velocity", [0, 0, 0]), dtype=np.float32)
+    angular_velocity = np.array(entity.get("angular_velocity", [0, 0, 0]), dtype=np.float32)
+
+    position = position + linear_velocity * frame_index
+    orientation = orientation + angular_velocity * frame_index
+
+    return translate(position) @ rotation_xyz(orientation) @ scale(scale_value)
 
 
 def save_frame(path, data, width, height):
@@ -135,6 +209,12 @@ def save_frame(path, data, width, height):
     Image.fromarray(image, mode="RGBA").save(path)
 
 
+def draw_background(ctx, scene):
+    background = scene.get("background", {})
+    color = background.get("color", [0.0, 0.0, 0.0, 1.0])
+    ctx.clear(color[0], color[1], color[2], color[3], depth=1.0)
+
+
 def main():
     config = load_config()
 
@@ -142,6 +222,8 @@ def main():
     frame_count = int(config.get("frame_count", 100))
     width = int(config.get("width", 1280))
     height = int(config.get("height", 720))
+
+    scene = config["scene"]
 
     vertex_shader = load_shader(config.get("vertex_shader", "shaders/synthetic_data/cube.vert"))
     fragment_shader = load_shader(config.get("fragment_shader", "shaders/synthetic_data/cube.frag"))
@@ -163,40 +245,58 @@ def main():
 
     vao, vbo, ibo = create_cube_mesh(ctx, program)
 
-    proj = perspective(60.0, width / height, 0.1, 100.0)
-    view = look_at(
-        eye=[0.0, 1.5, 5.0],
-        target=[0.0, 0.0, 0.0],
-        up=[0.0, 1.0, 0.0],
-    )
+    camera = scene.get("camera", {})
+    eye = camera.get("eye", [0.0, 1.5, 6.0])
+    target = camera.get("target", [0.0, 0.0, 0.0])
+    up = camera.get("up", [0.0, 1.0, 0.0])
+    fov_y = float(camera.get("fov_y", 60.0))
 
-    light_dir = np.array([-0.4, -1.0, -0.6], dtype=np.float32)
+    proj = perspective(fov_y, width / height, 0.1, 100.0)
+    view = look_at(eye, target, up)
+
+    lighting = scene.get("lighting", {})
+    light_dir = np.array(lighting.get("direction", [-0.4, -1.0, -0.6]), dtype=np.float32)
     light_dir /= np.linalg.norm(light_dir)
 
-    program["base_color"].value = (0.0, 0.15, 1.0)
     program["light_dir"].value = tuple(light_dir)
-    program["ambient"].value = 0.15
+    program["ambient"].value = float(lighting.get("ambient", 0.15))
+    program["input_texture"].value = 0
+
+    texture_cache = {}
 
     for frame in range(frame_count):
-        t = frame / frame_count
-        angle = t * math.tau
-
-        model = rotation_y(angle) @ rotation_x(angle * 0.35)
-        mvp = proj @ view @ model
-        normal_matrix = np.linalg.inv(model[:3, :3]).T
-
         framebuffer.use()
         ctx.viewport = (0, 0, width, height)
-        ctx.clear(0.0, 0.0, 0.0, 1.0, depth=1.0)
+        draw_background(ctx, scene) # Clear screen color, texture not supported
 
-        program["mvp"].write(mvp.T.astype(np.float32).tobytes())
-        program["normal_matrix"].write(normal_matrix.T.astype(np.float32).tobytes())
+        for entity in scene.get("entities", []):
+            model = compute_entity_model(entity, frame)
+            mvp = proj @ view @ model
+            normal_matrix = np.linalg.inv(model[:3, :3]).T
 
-        vao.render(mode=moderngl.TRIANGLES)
+            color = entity.get("color", [0.0, 0.15, 1.0])
+            texture_name = entity.get("texture")
+
+            texture, has_texture = resolve_texture(ctx, texture_name, color, texture_cache)
+            texture.use(0)
+
+            program["mvp"].write(mvp.T.astype(np.float32).tobytes())
+            program["normal_matrix"].write(normal_matrix.T.astype(np.float32).tobytes())
+            program["base_color"].value = tuple(color)
+            program["has_texture"].value = has_texture
+
+            vao.render(mode=moderngl.TRIANGLES)
+
+            if not texture_name:
+                texture.release()
+
         ctx.finish()
 
         frame_path = output_path / f"color_{frame:04d}.png"
         save_frame(frame_path, framebuffer.read(components=4), width, height)
+
+    for texture in texture_cache.values():
+        texture.release()
 
     vao.release()
     vbo.release()
