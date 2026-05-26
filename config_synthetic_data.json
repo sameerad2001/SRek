@@ -1,0 +1,8 @@
+{
+  "output_path": "input/synthetic_data",
+  "frame_count": 100,
+  "width": 1280,
+  "height": 720,
+  "vertex_shader": "shaders/synthetic_data/cube.vert",
+  "fragment_shader": "shaders/synthetic_data/cube.frag"
+}

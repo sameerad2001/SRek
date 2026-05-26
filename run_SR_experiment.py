@@ -9,7 +9,7 @@ from PIL import Image
 from src.spatial_SR import apply_spatial_sr
 
 
-def load_config(path="config.json"):
+def load_config(path="config_SR_experiment.json"):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 

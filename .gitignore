@@ -21,6 +21,7 @@ env/
 
 # Project outputs
 output/
+input/synthetic_data/
 
 # Generated metrics / videos / debug artifacts
 *.csv
