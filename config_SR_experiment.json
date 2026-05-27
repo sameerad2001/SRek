@@ -3,9 +3,9 @@
 
   "input_path": "./input/synthetic_data",
   "output_path": "./output",
-  "test_name": "interpolation_x2",
+  "test_name": "cubic_catmull_rom_x2",
   "sr_mode": "spatial",
-  "sr_type": "interpolation",
+  "sr_type": "cubic_catmull_rom",
   "sr_ratio": 2.0,
   "create_video": true,
   "fps": 30
