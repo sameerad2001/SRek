@@ -31,9 +31,11 @@ vec4 sample_bilinear_manual(vec2 uv)
     vec4 c = fetch_pixel(base + ivec2(0, 1));
     vec4 d = fetch_pixel(base + ivec2(1, 1));
 
+    // Interpolate across each row by fractional position x
     vec4 x0 = mix(a, b, f.x);
     vec4 x1 = mix(c, d, f.x);
 
+    // Interpolate the intermediate values by fractional position y
     return mix(x0, x1, f.y);
 }
 
