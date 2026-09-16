@@ -1,4 +1,4 @@
-# SHREK - Super (Hackable) Resolution (Experimentation) (Kit)
+# SRek - Super Resolution experimentation kit
 
 ## Setup
 
